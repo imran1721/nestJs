@@ -5,7 +5,7 @@ import { UsersService } from './users.service';
 import { JwtModule } from '@nestjs/jwt';
 
 @Module({
-  imports: [JwtModule.register({secret: 'SECRET', signOptions: {expiresIn: '3600'}})],
+  imports: [JwtModule.register({secret: 'SECRET', signOptions: {expiresIn: '1d'}})],
   controllers: [UsersController],
   providers: [UsersService, ...usersProviders]
 })

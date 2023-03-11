@@ -1,5 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { InjectModel } from "@nestjs/sequelize";
+import { InjectModel } from '@nestjs/sequelize';
 import { USER_REPOSITORY } from 'src/helpers/constant';
 import { User } from './model/user.model';
 
@@ -8,25 +8,41 @@ export class UsersService {
   constructor(
     @Inject('USER_REPOSITORY')
     private users: typeof User,
-  ){}
+  ) {}
 
   async createUser(user): Promise<User> {
     return await this.users.create(user);
   }
 
-  async findAll(): Promise<User[]> {
-    return await this.users.findAll();
+  async findAll(queryParam): Promise<User[]> {
+    return await this.users.findAll(queryParam);
   }
 
   async getUserByEmail(email: string): Promise<User> {
-    return await User.findOne({ where: { email } });
+    return await this.users.findOne({ where: { email } });
   }
 
-  // findOne(id: string): Promise<User> {
-  //     return this.userModel.findOne({
-  //         where: {
-  //             id,
-  //         },
-  //     });
-  // }
+  async getUserById(id: number): Promise<User> {
+    return await this.users.findOne({
+      where: {
+        id,
+      },
+    });
+  }
+
+  async updateUserById(user, id: number): Promise<[count: number]> {
+    return await this.users.update(user, {
+      where: {
+        id,
+      },
+    });
+  }
+
+  async deleteUserById(id: number): Promise<Number> {
+    return await this.users.destroy({
+      where: {
+        id,
+      },
+    });
+  }
 }

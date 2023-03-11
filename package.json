@@ -29,6 +29,7 @@
     "bcrypt": "^5.1.0",
     "dotenv": "^16.0.3",
     "jsonwebtoken": "^9.0.0",
+    "node-cache": "^5.1.2",
     "node-sessionstorage": "^1.0.0",
     "pg": "^8.10.0",
     "reflect-metadata": "^0.1.13",
