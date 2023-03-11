@@ -10,11 +10,16 @@ import {
   Headers,
   Query,
   Param,
+  CACHE_MANAGER,
+  Inject,
+  UseInterceptors,
+  CacheTTL,
+  CacheInterceptor,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { request } from 'http';
+import { Cache } from 'cache-manager';
 import { getQueryParam } from 'src/helpers/paramQuery';
-import { comparePassword, hashPassword } from 'src/helpers/passwordHash';
+import * as bcrypt from 'bcrypt';
 import { User } from './model/user.model';
 import { UsersService } from './users.service';
 
@@ -23,6 +28,7 @@ export class UsersController {
   constructor(
     private readonly usersService: UsersService,
     private jwtService: JwtService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
   @Post('/login')
@@ -32,8 +38,7 @@ export class UsersController {
       if (!email || !password)
         return response.status(400).json('Email or Password missing!');
       const user = await this.usersService.getUserByEmail(email);
-      console.log(password, user?.dataValues?.password);
-      if (user && password === user?.dataValues?.password) {
+      if (user && (await bcrypt.compare(password, user.password))) {
         const token = await this.jwtService.signAsync({ id: user?.id });
         console.log(`Token: ${token}`);
         return response.status(200).json({
@@ -47,6 +52,7 @@ export class UsersController {
     }
   }
 
+  @CacheTTL(100)
   @Get()
   async getUsers(
     @Res() response,
@@ -67,13 +73,16 @@ export class UsersController {
           .status(HttpStatus.UNAUTHORIZED)
           .json(`Unable to authorize access token!, Error: ${e}`);
       }
-      // if (cache.has(cacheKey)) return res.status(200).json(cache.get(cacheKey));
-      // else {
-      const formattedQueryParam = getQueryParam(query);
-      const users = await this.usersService.findAll(formattedQueryParam);
-      // cache.set(cacheKey, users);
-      return response.status(HttpStatus.OK).json(users);
-      // }
+
+      const cachedUser = await this.cacheManager.get(cacheKey);
+      if (cachedUser) return response.status(200).json(cachedUser);
+      else {
+        const formattedQueryParam = getQueryParam(query);
+        const users = await this.usersService.findAll(formattedQueryParam);
+        await this.cacheManager.set(cacheKey, users);
+        console.log(this.cacheManager.get(cacheKey), '::::cache');
+        return response.status(HttpStatus.OK).json(users);
+      }
     } catch (err: any) {
       const errors = err?.errors?.map((error: Error) => error.message) || err;
       return response
@@ -86,6 +95,9 @@ export class UsersController {
   async createUser(@Res() response, @Body() user: User): Promise<User> {
     {
       try {
+        const salt = await bcrypt.genSalt();
+        const hashPassword = await bcrypt.hash(user.password, salt);
+        user.password = hashPassword;
         const result = await this.usersService.createUser(user);
         return response.status(HttpStatus.OK).json(result);
       } catch (err: any) {

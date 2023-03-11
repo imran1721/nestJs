@@ -14,7 +14,7 @@ export class UsersService {
     return await this.users.create(user);
   }
 
-  async findAll(queryParam): Promise<User[]> {
+  async findAll(queryParam): Promise<any> {
     return await this.users.findAll(queryParam);
   }
 
