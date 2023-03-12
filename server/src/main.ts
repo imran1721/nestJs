@@ -5,7 +5,10 @@ import { ServerOptions } from 'socket.io';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { IoAdapter } from '@nestjs/platform-socket.io/adapters';
 import { join } from 'path';
+import * as dotenv from 'dotenv';
 
+dotenv.config();
+const PORT = process.env.PORT || 3001;
 export class SocketAdapter extends IoAdapter {
   createIOServer(
     port: number,
@@ -32,6 +35,17 @@ async function bootstrap() {
     .setDescription('The Users API description')
     .setVersion('1.0')
     .addTag('users')
+    .addBearerAuth(
+      {
+        description: `[just text field] Please enter token in following format: Bearer <JWT>`,
+        name: 'Authorization',
+        bearerFormat: 'Bearer',
+        scheme: 'Bearer',
+        type: 'http',
+        in: 'Header',
+      },
+      'access-token',
+    )
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
@@ -40,6 +54,8 @@ async function bootstrap() {
     origin: '*',
   });
   app.useWebSocketAdapter(new SocketAdapter(app));
-  await app.listen(3001);
+  await app.listen(PORT).then(() => {
+    console.log(`listening on port ${PORT}`);
+  });
 }
 bootstrap();

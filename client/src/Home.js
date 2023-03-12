@@ -2,8 +2,10 @@ import React, { useState } from "react";
 import io from "socket.io-client";
 import ChatWidget from "./component/ChatWidget";
 import "./App.css";
+import { ToastContainer, toast } from 'react-toastify';
 
-const socket = io.connect("http://localhost:3001/chat");
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL
+const socket = io.connect(`${API_BASE_URL}/chat`);
 
 function Home() {
   const [email, setEmail] = useState("");
@@ -14,7 +16,7 @@ function Home() {
   const logIn = async (e) => {
     e.preventDefault();
     if (email !== "" && password !== "") {
-      const res = await fetch('http://localhost:3001/users/login', {
+      const res = await fetch(`${API_BASE_URL}/users/login`, {
         method: 'POST',
         body: JSON.stringify({
           email,
@@ -24,20 +26,23 @@ function Home() {
             "Content-Type": "application/json"
         }
       })
-console.log(res);
+
       if (res.status === 200) {
+        toast("✅ User Authenticated", {type: "success"});
         const responseData = await res.json();
         setUsername(responseData.username);
         socket.emit("joinRoom", {username: responseData.username, room: "Room"});
         setShowChat(true);
       }
       else {
-        alert('Authentication Failed')
+        toast("❌ Incorrect email or password!", {type: "error"});
       }
     }
   };
 
   return (
+    <>
+        <ToastContainer />
     <div className="flex justify-center align-middle min-w-screen min-h-screen bg-slate-50 h-1">
       {!showChat ? (
         <div className="flex h-96 lg:w-1/4 sm:w-2/4 mx-auto my-auto bg-white rounded-xl shadow-lg  py-12 px-4 sm:px-6 lg:px-8">
@@ -63,6 +68,7 @@ console.log(res);
                   setPassword(event.target.value);
                 }}
                 className="p-2 mt-3 border border-indigo-600"
+                onKeyDown={(event)=> event.key === "Enter" && logIn(event)}
               />
               <button
                 className="mt-3 block bg-indigo-600 text-xl font-bold  text-white p-2"
@@ -76,7 +82,10 @@ console.log(res);
       ) : (
         <ChatWidget socket={socket} username={username} password={password} />
       )}
+
     </div>
+
+    </>
   );
 }
 

@@ -8,6 +8,8 @@ import {
   Unique,
 } from 'sequelize-typescript';
 
+import { ApiProperty } from '@nestjs/swagger';
+
 @Table({ tableName: 'users', timestamps: true })
 export class User extends Model {
   @AutoIncrement
@@ -18,6 +20,7 @@ export class User extends Model {
   })
   id?: number | null;
 
+  @ApiProperty()
   @NotEmpty
   @Column({
     type: DataType.STRING,
@@ -25,6 +28,7 @@ export class User extends Model {
   })
   firstName?: string;
 
+  @ApiProperty()
   @NotEmpty
   @Column({
     type: DataType.STRING,
@@ -32,6 +36,7 @@ export class User extends Model {
   })
   lastName?: string;
 
+  @ApiProperty()
   @NotEmpty
   @Unique
   @Column({
@@ -43,6 +48,7 @@ export class User extends Model {
   })
   email?: string;
 
+  @ApiProperty()
   @NotEmpty
   @Column({
     type: DataType.STRING,
@@ -50,6 +56,7 @@ export class User extends Model {
   })
   password?: string;
 
+  @ApiProperty()
   @NotEmpty
   @Column({
     type: DataType.STRING,

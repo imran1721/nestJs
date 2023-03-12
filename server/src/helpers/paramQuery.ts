@@ -2,7 +2,8 @@ export const getQueryParam = (req: any) => {
   let {sort, page, limit} = req;
   let paramQuery: any = {};
   let offset;
-
+  paramQuery.limit = limit
+  
   // sorting
   if (sort !== '' && typeof sort !== 'undefined') {
     let query;
@@ -21,5 +22,6 @@ export const getQueryParam = (req: any) => {
     paramQuery.offset = Number(offset);
     paramQuery.limit = Number(limit);
   }
+
   return paramQuery;
 };

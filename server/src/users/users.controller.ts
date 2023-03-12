@@ -12,9 +12,7 @@ import {
   Param,
   CACHE_MANAGER,
   Inject,
-  UseInterceptors,
-  CacheTTL,
-  CacheInterceptor,
+  CacheTTL, 
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Cache } from 'cache-manager';
@@ -22,7 +20,14 @@ import { getQueryParam } from 'src/helpers/paramQuery';
 import * as bcrypt from 'bcrypt';
 import { User } from './model/user.model';
 import { UsersService } from './users.service';
+import * as dotenv from 'dotenv';
+import {LogInDetails} from './dto/logInRequest';
+import { ApiBearerAuth, ApiParam  } from '@nestjs/swagger';
+import { PaginationParam } from './dto/paginationParam';
+dotenv.config();
 
+const EXPIRES_IN = process.env.EXPIRES_IN;
+const CACHE_TTL = Number(process.env.CACHE_TTL);
 @Controller('users')
 export class UsersController {
   constructor(
@@ -32,32 +37,33 @@ export class UsersController {
   ) {}
 
   @Post('/login')
-  async login(@Res() response, @Body() Credential: any): Promise<User> {
+  async login(@Res() response, @Body() credential: LogInDetails): Promise<User> {
     {
-      const { email, password } = Credential;
+      const { email, password } = credential;
       if (!email || !password)
-        return response.status(400).json('Email or Password missing!');
+        return response.status(HttpStatus.BAD_REQUEST).json('Email or Password missing!');
       const user = await this.usersService.getUserByEmail(email);
       if (user && (await bcrypt.compare(password, user.password))) {
         const token = await this.jwtService.signAsync({ id: user?.id });
         console.log(`Token: ${token}`);
-        return response.status(200).json({
+        return response.status(HttpStatus.OK).json({
           username: user?.dataValues?.firstName,
           AccessToken: token,
-          ExpiresIn: '1d',
+          ExpiresIn: EXPIRES_IN,
         });
       } else {
-        return response.status(401).json('Incorrect Email or Password!');
+        return response.status(HttpStatus.BAD_GATEWAY).json('Incorrect Email or Password!');
       }
     }
   }
 
-  @CacheTTL(100)
+  @CacheTTL(CACHE_TTL)
   @Get()
+  @ApiBearerAuth('access-token')
   async getUsers(
     @Res() response,
     @Headers() headers,
-    @Query() query,
+    @Query() query: PaginationParam,
   ): Promise<User[]> {
     try {
       const cacheKey = 'allUsers';
@@ -73,14 +79,12 @@ export class UsersController {
           .status(HttpStatus.UNAUTHORIZED)
           .json(`Unable to authorize access token!, Error: ${e}`);
       }
-
       const cachedUser = await this.cacheManager.get(cacheKey);
-      if (cachedUser) return response.status(200).json(cachedUser);
+      if (cachedUser) return response.status(HttpStatus.OK).json(cachedUser);
       else {
         const formattedQueryParam = getQueryParam(query);
         const users = await this.usersService.findAll(formattedQueryParam);
         await this.cacheManager.set(cacheKey, users);
-        console.log(this.cacheManager.get(cacheKey), '::::cache');
         return response.status(HttpStatus.OK).json(users);
       }
     } catch (err: any) {
@@ -108,6 +112,13 @@ export class UsersController {
   }
 
   @Get('/:id')
+  @ApiBearerAuth('access-token')
+  @ApiParam({
+    name: 'id',
+    type: 'integer',
+    description: `enter User's id`,
+    required: true
+})
   async getUserById(
     @Res() response,
     @Param('id') param,
@@ -137,6 +148,13 @@ export class UsersController {
   }
 
   @Put('/:id')
+  @ApiBearerAuth('access-token')
+  @ApiParam({
+    name: 'id',
+    type: 'integer',
+    description: `enter User's id`,
+    required: true
+})
   async updateUserById(
     @Res() response,
     @Body() user: User,
@@ -157,10 +175,10 @@ export class UsersController {
           .json(`Unable to authorize access token!, Error: ${e}`);
       }
       const userResult = await this.usersService.getUserById(param);
-      if (!userResult) return response.status(400).json('User not found!');
+      if (!userResult) return response.status(HttpStatus.BAD_REQUEST).json('User not found!');
       const count = await this.usersService.updateUserById(user, param);
       if (count)
-        return response.status(200).json('user detail updated successfully!');
+        return response.status(HttpStatus.OK).json('user detail updated successfully!');
     } catch (err: any) {
       const errors = err.errors.map((error: Error) => error.message);
       return response
@@ -170,6 +188,13 @@ export class UsersController {
   }
 
   @Delete('/:id')
+  @ApiBearerAuth('access-token')
+  @ApiParam({
+    name: 'id',
+    type: 'integer',
+    description: `enter User's id`,
+    required: true
+})
   async deleteUserById(
     @Res() response,
     @Param('id') param,
@@ -189,12 +214,12 @@ export class UsersController {
           .json(`Unable to authorize access token!, Error: ${e}`);
       }
       const user = await this.usersService.getUserById(param);
-      if (!user) return response.status(400).json('User not found!');
+      if (!user) return response.status(HttpStatus.BAD_REQUEST).json('User not found!');
       const count = await this.usersService.deleteUserById(param);
-      if (count) return response.status(200).json('user deleted successfully!');
+      if (count) return response.status(HttpStatus.OK).json('user deleted successfully!');
     } catch (err: any) {
       const errors = err.errors.map((error: Error) => error.message);
-      return response.status(400).json({ Errors: { errors } });
+      return response.status(HttpStatus.BAD_REQUEST).json({ Errors: { errors } });
     }
   }
 }

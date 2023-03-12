@@ -31,6 +31,7 @@
     "@nestjs/websockets": "^9.3.9",
     "bcrypt": "^5.1.0",
     "cache-manager": "^5.1.7",
+    "class-validator": "^0.14.0",
     "dotenv": "^16.0.3",
     "jsonwebtoken": "^9.0.0",
     "node-cache": "^5.1.2",
