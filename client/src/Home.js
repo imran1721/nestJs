@@ -4,7 +4,7 @@ import ChatWidget from "./component/ChatWidget";
 import "./App.css";
 import { ToastContainer, toast } from 'react-toastify';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:3001"
 const socket = io.connect(`${API_BASE_URL}/chat`);
 
 function Home() {
