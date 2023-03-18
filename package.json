@@ -6,8 +6,8 @@
   "scripts": {
     "start": "concurrently \"npm run start:server\" \"npm run start:client\"",
     "start:client": "cd client && npm i && npm start",
-    "start:server": "cd server && npm i && npm start"
-      },
+    "start:server": "cd server && docker compose up && npm i && npm start"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/imran1721/nestJs.git"
@@ -17,5 +17,8 @@
   "bugs": {
     "url": "https://github.com/imran1721/nestJs/issues"
   },
-  "homepage": "https://github.com/imran1721/nestJs#readme"
+  "homepage": "https://github.com/imran1721/nestJs#readme",
+  "dependencies": {
+    "concurrently": "^7.6.0"
+  }
 }

@@ -38,7 +38,7 @@ export class UsersController {
 
   @Post('/login')
   async login(@Res() response, @Body() credential: LogInDetails): Promise<User> {
-    {
+    try{
       const { email, password } = credential;
       if (!email || !password)
         return response.status(HttpStatus.BAD_REQUEST).json('Email or Password missing!');
@@ -52,8 +52,13 @@ export class UsersController {
           ExpiresIn: EXPIRES_IN,
         });
       } else {
-        return response.status(HttpStatus.BAD_GATEWAY).json('Incorrect Email or Password!');
+        return response.status(HttpStatus.UNAUTHORIZED).json('Incorrect Email or Password!');
       }
+    } catch (err: any) {
+      const errors = err?.errors?.map((error: Error) => error.message) || err;
+      return response
+        .status(HttpStatus.GATEWAY_TIMEOUT)
+        .json({ Errors: { errors } });
     }
   }
 
@@ -178,7 +183,7 @@ export class UsersController {
       if (!userResult) return response.status(HttpStatus.BAD_REQUEST).json('User not found!');
       const count = await this.usersService.updateUserById(user, param);
       if (count)
-        return response.status(HttpStatus.OK).json('user detail updated successfully!');
+        return response.status(HttpStatus.OK).json('User details4 updated successfully!');
     } catch (err: any) {
       const errors = err.errors.map((error: Error) => error.message);
       return response
